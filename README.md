@@ -12,6 +12,7 @@ https://plugins.jetbrains.com/plugin/26071-mcp-server
 To use this with Claude Desktop, add the following to your `claude_desktop_config.json`.
 The full path on MacOS: `~/Library/Application\ Support/Claude/claude_desktop_config.json`, on Windows: `%APPDATA%/Claude/claude_desktop_config.json`.
 
+### Using NPM package (default)
 ```json
 {
   "mcpServers": {
@@ -21,6 +22,34 @@ The full path on MacOS: `~/Library/Application\ Support/Claude/claude_desktop_co
     }
   }
 }
+```
+
+### Using Docker container
+If you want to run the MCP server as a container, use this configuration instead:
+```json
+{
+  "mcpServers": {
+    "mcp-jetbrains": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "--init",
+        "--add-host=host.docker.internal:host-gateway",
+        "-e", "IDE_PORT=8090",
+        "-e", "LOG_ENABLED=true",
+        "-e", "DOCKER_CONTAINER=true",
+        "mcp-jetbrains:v2"
+      ]
+    }
+  }
+}
+```
+
+Make sure you have built the Docker image first using:
+```bash
+docker build -t mcp-jetbrains:v2 .
 ```
 
 ## Configuration
@@ -50,4 +79,3 @@ To enable logging add:
 1. Tested on macOS
 2. `brew install node pnpm`
 3. Run `pnpm build` to build the project
-
