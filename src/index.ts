@@ -26,6 +26,388 @@ interface IDEResponseErr {
 
 type IDEResponse = IDEResponseOk | IDEResponseErr;
 
+interface Tool {
+    name: string;
+    description: string;
+    parameters: {
+        type: string;
+        properties: Record<string, any>;
+        required?: string[];
+    };
+}
+
+// Store IDE-provided tools separately
+let ideTools: Tool[] = [];
+
+// Default list of tools that are always available
+const DEFAULT_TOOLS: Tool[] = [
+    {
+        name: "create_new_file_with_text",
+        description: "Creates a new file at the specified path within the project directory and populates it with the provided text",
+        parameters: {
+            type: "object",
+            properties: {
+                pathInProject: {
+                    type: "string",
+                    description: "The relative path where the file should be created"
+                },
+                text: {
+                    type: "string",
+                    description: "The content to write into the new file"
+                }
+            },
+            required: ["pathInProject", "text"]
+        }
+    },
+    {
+        name: "execute_action_by_id",
+        description: "Executes an action by its ID in JetBrains IDE editor",
+        parameters: {
+            type: "object",
+            properties: {
+                actionId: {
+                    type: "string",
+                    description: "The ID of the action to execute"
+                }
+            },
+            required: ["actionId"]
+        }
+    },
+    {
+        name: "execute_terminal_command",
+        description: "Executes a specified shell command in the IDE's integrated terminal",
+        parameters: {
+            type: "object",
+            properties: {
+                command: {
+                    type: "string",
+                    description: "The shell command to execute"
+                }
+            },
+            required: ["command"]
+        }
+    },
+    {
+        name: "find_commit_by_message",
+        description: "Searches for a commit based on the provided text or keywords in the project history",
+        parameters: {
+            type: "object",
+            properties: {
+                query: {
+                    type: "string",
+                    description: "The text or keywords to search for in commit messages"
+                }
+            },
+            required: ["query"]
+        }
+    },
+    {
+        name: "find_files_by_name_substring",
+        description: "Searches for all files in the project whose names contain the specified substring",
+        parameters: {
+            type: "object",
+            properties: {
+                nameSubstring: {
+                    type: "string",
+                    description: "The substring to search for in file names"
+                }
+            },
+            required: ["nameSubstring"]
+        }
+    },
+    {
+        name: "get_all_open_file_paths",
+        description: "Lists full path relative paths to project root of all currently open files",
+        parameters: {
+            type: "object",
+            properties: {}
+        }
+    },
+    {
+        name: "get_all_open_file_texts",
+        description: "Returns text of all currently open files in the JetBrains IDE editor",
+        parameters: {
+            type: "object",
+            properties: {}
+        }
+    },
+    {
+        name: "get_debugger_breakpoints",
+        description: "Retrieves a list of all line breakpoints currently set in the project",
+        parameters: {
+            type: "object",
+            properties: {}
+        }
+    },
+    {
+        name: "get_file_text_by_path",
+        description: "Retrieves the text content of a file using its path relative to project root",
+        parameters: {
+            type: "object",
+            properties: {
+                pathInProject: {
+                    type: "string",
+                    description: "The file location from project root"
+                }
+            },
+            required: ["pathInProject"]
+        }
+    },
+    {
+        name: "get_open_in_editor_file_path",
+        description: "Retrieves the absolute path of the currently active file",
+        parameters: {
+            type: "object",
+            properties: {}
+        }
+    },
+    {
+        name: "get_open_in_editor_file_text",
+        description: "Retrieves the complete text content of the currently active file",
+        parameters: {
+            type: "object",
+            properties: {}
+        }
+    },
+    {
+        name: "get_progress_indicators",
+        description: "Retrieves the status of all running progress indicators",
+        parameters: {
+            type: "object",
+            properties: {}
+        }
+    },
+    {
+        name: "get_project_dependencies",
+        description: "Get list of all dependencies defined in the project",
+        parameters: {
+            type: "object",
+            properties: {}
+        }
+    },
+    {
+        name: "get_project_modules",
+        description: "Get list of all modules in the project with their dependencies",
+        parameters: {
+            type: "object",
+            properties: {}
+        }
+    },
+    {
+        name: "get_project_vcs_status",
+        description: "Retrieves the current version control status of files in the project",
+        parameters: {
+            type: "object",
+            properties: {}
+        }
+    },
+    {
+        name: "get_run_configurations",
+        description: "Returns a list of run configurations for the current project",
+        parameters: {
+            type: "object",
+            properties: {}
+        }
+    },
+    {
+        name: "get_selected_in_editor_text",
+        description: "Retrieves the currently selected text from the active editor",
+        parameters: {
+            type: "object",
+            properties: {}
+        }
+    },
+    {
+        name: "get_terminal_text",
+        description: "Retrieves the current text content from the first active terminal",
+        parameters: {
+            type: "object",
+            properties: {}
+        }
+    },
+    {
+        name: "list_available_actions",
+        description: "Lists all available actions in JetBrains IDE editor",
+        parameters: {
+            type: "object",
+            properties: {}
+        }
+    },
+    {
+        name: "list_directory_tree_in_folder",
+        description: "Provides a hierarchical tree view of the project directory structure",
+        parameters: {
+            type: "object",
+            properties: {
+                pathInProject: {
+                    type: "string",
+                    description: "The starting folder path (use '/' for project root)"
+                },
+                maxDepth: {
+                    type: "integer",
+                    description: "Maximum recursion depth (default: 5)"
+                }
+            },
+            required: ["pathInProject"]
+        }
+    },
+    {
+        name: "list_files_in_folder",
+        description: "Lists all files and directories in the specified project folder",
+        parameters: {
+            type: "object",
+            properties: {
+                pathInProject: {
+                    type: "string",
+                    description: "The folder path (use '/' for project root)"
+                }
+            },
+            required: ["pathInProject"]
+        }
+    },
+    {
+        name: "open_file_in_editor",
+        description: "Opens the specified file in the JetBrains IDE editor",
+        parameters: {
+            type: "object",
+            properties: {
+                filePath: {
+                    type: "string",
+                    description: "The path of file to open (can be absolute or relative)"
+                }
+            },
+            required: ["filePath"]
+        }
+    },
+    {
+        name: "replace_current_file_text",
+        description: "Replaces the entire content of the currently active file",
+        parameters: {
+            type: "object",
+            properties: {
+                text: {
+                    type: "string",
+                    description: "The new content to write"
+                }
+            },
+            required: ["text"]
+        }
+    },
+    {
+        name: "replace_file_text_by_path",
+        description: "Replaces the entire content of a specified file with new text",
+        parameters: {
+            type: "object",
+            properties: {
+                pathInProject: {
+                    type: "string",
+                    description: "The path to the target file, relative to project root"
+                },
+                text: {
+                    type: "string",
+                    description: "The new content to write"
+                }
+            },
+            required: ["pathInProject", "text"]
+        }
+    },
+    {
+        name: "replace_selected_text",
+        description: "Replaces the currently selected text in the active editor",
+        parameters: {
+            type: "object",
+            properties: {
+                text: {
+                    type: "string",
+                    description: "The replacement content"
+                }
+            },
+            required: ["text"]
+        }
+    },
+    {
+        name: "replace_specific_text",
+        description: "Replaces specific text occurrences in a file with new text",
+        parameters: {
+            type: "object",
+            properties: {
+                pathInProject: {
+                    type: "string",
+                    description: "The path to the target file, relative to project root"
+                },
+                oldText: {
+                    type: "string",
+                    description: "The text to be replaced"
+                },
+                newText: {
+                    type: "string",
+                    description: "The replacement text"
+                }
+            },
+            required: ["pathInProject", "oldText", "newText"]
+        }
+    },
+    {
+        name: "run_configuration",
+        description: "Run a specific run configuration in the current project",
+        parameters: {
+            type: "object",
+            properties: {
+                name: {
+                    type: "string",
+                    description: "The name of the run configuration to execute"
+                }
+            },
+            required: ["name"]
+        }
+    },
+    {
+        name: "search_in_files_content",
+        description: "Searches for a text substring within all files in the project",
+        parameters: {
+            type: "object",
+            properties: {
+                searchText: {
+                    type: "string",
+                    description: "The text to find"
+                }
+            },
+            required: ["searchText"]
+        }
+    },
+    {
+        name: "toggle_debugger_breakpoint",
+        description: "Toggles a debugger breakpoint at the specified line in a project file",
+        parameters: {
+            type: "object",
+            properties: {
+                filePathInProject: {
+                    type: "string",
+                    description: "The relative path to the file within the project"
+                },
+                line: {
+                    type: "integer",
+                    description: "The line number where to toggle the breakpoint (1-based)"
+                }
+            },
+            required: ["filePathInProject", "line"]
+        }
+    },
+    {
+        name: "wait",
+        description: "Waits for a specified number of milliseconds",
+        parameters: {
+            type: "object",
+            properties: {
+                milliseconds: {
+                    type: "integer",
+                    description: "The duration to wait in milliseconds (default: 5000)"
+                }
+            }
+        }
+    }
+];
+
 /**
  * Globally store the cached IDE endpoint.
  * We'll update this once at the beginning and every 10 seconds.
@@ -130,16 +512,45 @@ async function findWorkingIDEEndpoint(): Promise<string> {
 }
 
 /**
+ * Updates the list of tools from the IDE
+ */
+async function updateIDETools(endpoint: string) {
+    try {
+        log(`Fetching tools from IDE at ${endpoint}`);
+        const toolsResponse = await fetch(`${endpoint}/mcp/list_tools`);
+        if (toolsResponse.ok) {
+            const response = await toolsResponse.json();
+            if (Array.isArray(response.tools)) {
+                ideTools = response.tools;
+                log(`Updated IDE tools list with ${ideTools.length} tools`);
+                // Notify that tools have changed
+                sendToolsChanged();
+            } else {
+                log("IDE returned invalid tools format");
+            }
+        } else {
+            log(`Failed to fetch tools from IDE: ${toolsResponse.status}`);
+        }
+    } catch (error) {
+        log("Error updating IDE tools:", error);
+    }
+}
+
+/**
  * Updates the cached endpoint by finding a working IDE endpoint.
  * This runs once at startup and then once every 10 seconds in runServer().
  */
 async function updateIDEEndpoint() {
     try {
-        cachedEndpoint = await findWorkingIDEEndpoint();
-        log(`Updated cachedEndpoint to: ${cachedEndpoint}`);
+        const newEndpoint = await findWorkingIDEEndpoint();
+        if (newEndpoint !== cachedEndpoint) {
+            cachedEndpoint = newEndpoint;
+            log(`Updated cachedEndpoint to: ${cachedEndpoint}`);
+            // Update tools list when we get a new endpoint
+            await updateIDETools(cachedEndpoint);
+        }
     } catch (error) {
-        // If we fail to find a working endpoint, keep the old one if it existed.
-        // It's up to you how to handle this scenario (e.g., set cachedEndpoint = null).
+        // If we fail to find a working endpoint, keep the old one if it existed
         log("Failed to update IDE endpoint:", error);
     }
 }
@@ -166,28 +577,25 @@ const server = new Server(
 );
 
 /**
- * Handles listing tools by using the *cached* endpoint (no new search each time).
+ * Handles listing tools by returning default tools immediately
+ * and updating the list asynchronously if IDE is connected
  */
 server.setRequestHandler(ListToolsRequestSchema, async () => {
     log("Handling ListToolsRequestSchema request.");
-    if (!cachedEndpoint) {
-        // If no cached endpoint, we can't proceed
-        throw new Error("No working IDE endpoint available.");
+    
+    // Return default tools immediately
+    const tools = [...DEFAULT_TOOLS];
+    
+    // If we have a cached endpoint, try to get additional tools from IDE
+    if (cachedEndpoint) {
+        // Update tools asynchronously
+        updateIDETools(cachedEndpoint).catch(error => {
+            log("Error updating IDE tools:", error);
+        });
     }
-    try {
-        log(`Using cached endpoint ${cachedEndpoint} to list tools.`);
-        const toolsResponse = await fetch(`${cachedEndpoint}/mcp/list_tools`);
-        if (!toolsResponse.ok) {
-            log(`Failed to fetch tools with status ${toolsResponse.status}`);
-            throw new Error("Unable to list tools");
-        }
-        const tools = await toolsResponse.json();
-        log(`Successfully fetched tools: ${JSON.stringify(tools)}`);
-        return {tools};
-    } catch (error) {
-        log("Error handling ListToolsRequestSchema request:", error);
-        throw error;
-    }
+    
+    log(`Returning ${tools.length} default tools`);
+    return {tools};
 });
 
 /**
