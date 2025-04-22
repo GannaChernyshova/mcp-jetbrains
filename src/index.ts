@@ -29,22 +29,22 @@ type IDEResponse = IDEResponseOk | IDEResponseErr;
 interface Tool {
     name: string;
     description: string;
-    parameters: {
+    inputSchema: {
         type: string;
-        properties: Record<string, any>;
+        properties: Record<string, {
+            type: string;
+            description: string;
+        }>;
         required?: string[];
     };
 }
-
-// Store IDE-provided tools separately
-let ideTools: Tool[] = [];
 
 // Default list of tools that are always available
 const DEFAULT_TOOLS: Tool[] = [
     {
         name: "create_new_file_with_text",
         description: "Creates a new file at the specified path within the project directory and populates it with the provided text",
-        parameters: {
+        inputSchema: {
             type: "object",
             properties: {
                 pathInProject: {
@@ -62,7 +62,7 @@ const DEFAULT_TOOLS: Tool[] = [
     {
         name: "execute_action_by_id",
         description: "Executes an action by its ID in JetBrains IDE editor",
-        parameters: {
+        inputSchema: {
             type: "object",
             properties: {
                 actionId: {
@@ -76,7 +76,7 @@ const DEFAULT_TOOLS: Tool[] = [
     {
         name: "execute_terminal_command",
         description: "Executes a specified shell command in the IDE's integrated terminal",
-        parameters: {
+        inputSchema: {
             type: "object",
             properties: {
                 command: {
@@ -90,7 +90,7 @@ const DEFAULT_TOOLS: Tool[] = [
     {
         name: "find_commit_by_message",
         description: "Searches for a commit based on the provided text or keywords in the project history",
-        parameters: {
+        inputSchema: {
             type: "object",
             properties: {
                 query: {
@@ -104,7 +104,7 @@ const DEFAULT_TOOLS: Tool[] = [
     {
         name: "find_files_by_name_substring",
         description: "Searches for all files in the project whose names contain the specified substring",
-        parameters: {
+        inputSchema: {
             type: "object",
             properties: {
                 nameSubstring: {
@@ -118,7 +118,7 @@ const DEFAULT_TOOLS: Tool[] = [
     {
         name: "get_all_open_file_paths",
         description: "Lists full path relative paths to project root of all currently open files",
-        parameters: {
+        inputSchema: {
             type: "object",
             properties: {}
         }
@@ -126,7 +126,7 @@ const DEFAULT_TOOLS: Tool[] = [
     {
         name: "get_all_open_file_texts",
         description: "Returns text of all currently open files in the JetBrains IDE editor",
-        parameters: {
+        inputSchema: {
             type: "object",
             properties: {}
         }
@@ -134,7 +134,7 @@ const DEFAULT_TOOLS: Tool[] = [
     {
         name: "get_debugger_breakpoints",
         description: "Retrieves a list of all line breakpoints currently set in the project",
-        parameters: {
+        inputSchema: {
             type: "object",
             properties: {}
         }
@@ -142,7 +142,7 @@ const DEFAULT_TOOLS: Tool[] = [
     {
         name: "get_file_text_by_path",
         description: "Retrieves the text content of a file using its path relative to project root",
-        parameters: {
+        inputSchema: {
             type: "object",
             properties: {
                 pathInProject: {
@@ -156,7 +156,7 @@ const DEFAULT_TOOLS: Tool[] = [
     {
         name: "get_open_in_editor_file_path",
         description: "Retrieves the absolute path of the currently active file",
-        parameters: {
+        inputSchema: {
             type: "object",
             properties: {}
         }
@@ -164,7 +164,7 @@ const DEFAULT_TOOLS: Tool[] = [
     {
         name: "get_open_in_editor_file_text",
         description: "Retrieves the complete text content of the currently active file",
-        parameters: {
+        inputSchema: {
             type: "object",
             properties: {}
         }
@@ -172,7 +172,7 @@ const DEFAULT_TOOLS: Tool[] = [
     {
         name: "get_progress_indicators",
         description: "Retrieves the status of all running progress indicators",
-        parameters: {
+        inputSchema: {
             type: "object",
             properties: {}
         }
@@ -180,7 +180,7 @@ const DEFAULT_TOOLS: Tool[] = [
     {
         name: "get_project_dependencies",
         description: "Get list of all dependencies defined in the project",
-        parameters: {
+        inputSchema: {
             type: "object",
             properties: {}
         }
@@ -188,7 +188,7 @@ const DEFAULT_TOOLS: Tool[] = [
     {
         name: "get_project_modules",
         description: "Get list of all modules in the project with their dependencies",
-        parameters: {
+        inputSchema: {
             type: "object",
             properties: {}
         }
@@ -196,7 +196,7 @@ const DEFAULT_TOOLS: Tool[] = [
     {
         name: "get_project_vcs_status",
         description: "Retrieves the current version control status of files in the project",
-        parameters: {
+        inputSchema: {
             type: "object",
             properties: {}
         }
@@ -204,7 +204,7 @@ const DEFAULT_TOOLS: Tool[] = [
     {
         name: "get_run_configurations",
         description: "Returns a list of run configurations for the current project",
-        parameters: {
+        inputSchema: {
             type: "object",
             properties: {}
         }
@@ -212,7 +212,7 @@ const DEFAULT_TOOLS: Tool[] = [
     {
         name: "get_selected_in_editor_text",
         description: "Retrieves the currently selected text from the active editor",
-        parameters: {
+        inputSchema: {
             type: "object",
             properties: {}
         }
@@ -220,7 +220,7 @@ const DEFAULT_TOOLS: Tool[] = [
     {
         name: "get_terminal_text",
         description: "Retrieves the current text content from the first active terminal",
-        parameters: {
+        inputSchema: {
             type: "object",
             properties: {}
         }
@@ -228,7 +228,7 @@ const DEFAULT_TOOLS: Tool[] = [
     {
         name: "list_available_actions",
         description: "Lists all available actions in JetBrains IDE editor",
-        parameters: {
+        inputSchema: {
             type: "object",
             properties: {}
         }
@@ -236,7 +236,7 @@ const DEFAULT_TOOLS: Tool[] = [
     {
         name: "list_directory_tree_in_folder",
         description: "Provides a hierarchical tree view of the project directory structure",
-        parameters: {
+        inputSchema: {
             type: "object",
             properties: {
                 pathInProject: {
@@ -254,7 +254,7 @@ const DEFAULT_TOOLS: Tool[] = [
     {
         name: "list_files_in_folder",
         description: "Lists all files and directories in the specified project folder",
-        parameters: {
+        inputSchema: {
             type: "object",
             properties: {
                 pathInProject: {
@@ -268,7 +268,7 @@ const DEFAULT_TOOLS: Tool[] = [
     {
         name: "open_file_in_editor",
         description: "Opens the specified file in the JetBrains IDE editor",
-        parameters: {
+        inputSchema: {
             type: "object",
             properties: {
                 filePath: {
@@ -282,7 +282,7 @@ const DEFAULT_TOOLS: Tool[] = [
     {
         name: "replace_current_file_text",
         description: "Replaces the entire content of the currently active file",
-        parameters: {
+        inputSchema: {
             type: "object",
             properties: {
                 text: {
@@ -296,7 +296,7 @@ const DEFAULT_TOOLS: Tool[] = [
     {
         name: "replace_file_text_by_path",
         description: "Replaces the entire content of a specified file with new text",
-        parameters: {
+        inputSchema: {
             type: "object",
             properties: {
                 pathInProject: {
@@ -314,7 +314,7 @@ const DEFAULT_TOOLS: Tool[] = [
     {
         name: "replace_selected_text",
         description: "Replaces the currently selected text in the active editor",
-        parameters: {
+        inputSchema: {
             type: "object",
             properties: {
                 text: {
@@ -328,7 +328,7 @@ const DEFAULT_TOOLS: Tool[] = [
     {
         name: "replace_specific_text",
         description: "Replaces specific text occurrences in a file with new text",
-        parameters: {
+        inputSchema: {
             type: "object",
             properties: {
                 pathInProject: {
@@ -350,7 +350,7 @@ const DEFAULT_TOOLS: Tool[] = [
     {
         name: "run_configuration",
         description: "Run a specific run configuration in the current project",
-        parameters: {
+        inputSchema: {
             type: "object",
             properties: {
                 name: {
@@ -364,7 +364,7 @@ const DEFAULT_TOOLS: Tool[] = [
     {
         name: "search_in_files_content",
         description: "Searches for a text substring within all files in the project",
-        parameters: {
+        inputSchema: {
             type: "object",
             properties: {
                 searchText: {
@@ -378,7 +378,7 @@ const DEFAULT_TOOLS: Tool[] = [
     {
         name: "toggle_debugger_breakpoint",
         description: "Toggles a debugger breakpoint at the specified line in a project file",
-        parameters: {
+        inputSchema: {
             type: "object",
             properties: {
                 filePathInProject: {
@@ -396,7 +396,7 @@ const DEFAULT_TOOLS: Tool[] = [
     {
         name: "wait",
         description: "Waits for a specified number of milliseconds",
-        parameters: {
+        inputSchema: {
             type: "object",
             properties: {
                 milliseconds: {
@@ -512,45 +512,16 @@ async function findWorkingIDEEndpoint(): Promise<string> {
 }
 
 /**
- * Updates the list of tools from the IDE
- */
-async function updateIDETools(endpoint: string) {
-    try {
-        log(`Fetching tools from IDE at ${endpoint}`);
-        const toolsResponse = await fetch(`${endpoint}/mcp/list_tools`);
-        if (toolsResponse.ok) {
-            const response = await toolsResponse.json();
-            if (Array.isArray(response.tools)) {
-                ideTools = response.tools;
-                log(`Updated IDE tools list with ${ideTools.length} tools`);
-                // Notify that tools have changed
-                sendToolsChanged();
-            } else {
-                log("IDE returned invalid tools format");
-            }
-        } else {
-            log(`Failed to fetch tools from IDE: ${toolsResponse.status}`);
-        }
-    } catch (error) {
-        log("Error updating IDE tools:", error);
-    }
-}
-
-/**
  * Updates the cached endpoint by finding a working IDE endpoint.
  * This runs once at startup and then once every 10 seconds in runServer().
  */
 async function updateIDEEndpoint() {
     try {
-        const newEndpoint = await findWorkingIDEEndpoint();
-        if (newEndpoint !== cachedEndpoint) {
-            cachedEndpoint = newEndpoint;
-            log(`Updated cachedEndpoint to: ${cachedEndpoint}`);
-            // Update tools list when we get a new endpoint
-            await updateIDETools(cachedEndpoint);
-        }
+        cachedEndpoint = await findWorkingIDEEndpoint();
+        log(`Updated cachedEndpoint to: ${cachedEndpoint}`);
     } catch (error) {
-        // If we fail to find a working endpoint, keep the old one if it existed
+        // If we fail to find a working endpoint, keep the old one if it existed.
+        // It's up to you how to handle this scenario (e.g., set cachedEndpoint = null).
         log("Failed to update IDE endpoint:", error);
     }
 }
@@ -565,16 +536,75 @@ const server = new Server(
     },
     {
         capabilities: {
-            tools: {
-                listChanged: true,
-            },
-            resources: {},
-        },
-        instructions: "You can interact with an JetBrains IntelliJ IDE and its features through this MCP (Model Context Protocol) server. The server provides access to various IDE tools and functionalities. " +
-            "All requests should be formatted as JSON objects according to the Model Context Protocol specification."
-    },
-
+            tools: {}
+        }
+    }
 );
+
+// Add caching for IDE tools
+const IDE_TOOLS_CACHE_TTL = 30_000; // 30 seconds
+let ideToolsCache: { tools: Tool[], timestamp: number } | null = null;
+
+/**
+ * Helper function to check if cache is valid
+ */
+function isCacheValid(cache: { timestamp: number } | null): boolean {
+    if (!cache) return false;
+    return Date.now() - cache.timestamp < IDE_TOOLS_CACHE_TTL;
+}
+
+/**
+ * Optimized tool merging function that efficiently combines default and IDE tools
+ */
+function mergeTools(defaultTools: Tool[], ideTools: Tool[]): Tool[] {
+    const mergedTools = new Map<string, Tool>();
+    
+    // Add default tools first
+    defaultTools.forEach(tool => mergedTools.set(tool.name, tool));
+    
+    // Add or update with IDE tools
+    ideTools.forEach(tool => {
+        if (!mergedTools.has(tool.name) || tool.description !== mergedTools.get(tool.name)?.description) {
+            mergedTools.set(tool.name, tool);
+        }
+    });
+    
+    return Array.from(mergedTools.values());
+}
+
+/**
+ * Enhanced error handling for IDE endpoint with retry logic
+ */
+async function fetchIDETools(endpoint: string, retries = 3): Promise<Tool[]> {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+            const toolsResponse = await fetch(`${endpoint}/mcp/list_tools`);
+            
+            if (!toolsResponse.ok) {
+                throw new Error(`HTTP error! status: ${toolsResponse.status}`);
+            }
+            
+            const response = await toolsResponse.json();
+            let ideTools: Tool[] = [];
+            
+            if (Array.isArray(response)) {
+                ideTools = response;
+            } else if (response.tools && Array.isArray(response.tools)) {
+                ideTools = response.tools;
+            }
+            
+            return ideTools;
+        } catch (error) {
+            log(`Attempt ${attempt} failed:`, error);
+            if (attempt === retries) {
+                throw error;
+            }
+            // Exponential backoff
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        }
+    }
+    return [];
+}
 
 /**
  * Handles listing tools by returning default tools immediately
@@ -583,19 +613,43 @@ const server = new Server(
 server.setRequestHandler(ListToolsRequestSchema, async () => {
     log("Handling ListToolsRequestSchema request.");
     
-    // Return default tools immediately
-    const tools = [...DEFAULT_TOOLS];
+    // Start with default tools
+    const defaultTools = [...DEFAULT_TOOLS];
+    let finalTools = defaultTools;
     
-    // If we have a cached endpoint, try to get additional tools from IDE
+    // Check if we have a valid cached endpoint
     if (cachedEndpoint) {
-        // Update tools asynchronously
-        updateIDETools(cachedEndpoint).catch(error => {
-            log("Error updating IDE tools:", error);
-        });
+        try {
+            // Check cache first
+            if (isCacheValid(ideToolsCache)) {
+                log("Using cached IDE tools");
+                finalTools = mergeTools(defaultTools, ideToolsCache!.tools);
+            } else {
+                log("Cache invalid or missing, fetching fresh IDE tools");
+                const ideTools = await fetchIDETools(cachedEndpoint);
+                
+                // Update cache
+                ideToolsCache = {
+                    tools: ideTools,
+                    timestamp: Date.now()
+                };
+                
+                finalTools = mergeTools(defaultTools, ideTools);
+            }
+        } catch (error) {
+            log("Error fetching IDE tools, using default tools only:", error);
+            // If we have a valid cache, use it as fallback
+            if (isCacheValid(ideToolsCache)) {
+                log("Using cached IDE tools as fallback");
+                finalTools = mergeTools(defaultTools, ideToolsCache!.tools);
+            }
+        }
+    } else {
+        log("No cached endpoint available, using default tools only");
     }
     
-    log(`Returning ${tools.length} default tools`);
-    return {tools};
+    log(`Returning ${finalTools.length} tools (${defaultTools.length} default + ${finalTools.length - defaultTools.length} IDE)`);
+    return { tools: finalTools };
 });
 
 /**
@@ -682,7 +736,20 @@ async function runServer() {
     }
 
     // 2) Then check again every 10 seconds (in case IDE restarts or ports change)
-    setInterval(updateIDEEndpoint, 10_000);
+    setInterval(async () => {
+        try {
+            const oldEndpoint = cachedEndpoint;
+            await updateIDEEndpoint();
+            
+            // If endpoint changed, invalidate cache
+            if (oldEndpoint !== cachedEndpoint) {
+                log("IDE endpoint changed, invalidating tools cache");
+                ideToolsCache = null;
+            }
+        } catch (error) {
+            log("Error during endpoint check:", error);
+        }
+    }, 10_000);
     log("Scheduled endpoint check every 10 seconds.");
 
     log("JetBrains Proxy MCP Server running on stdio");
